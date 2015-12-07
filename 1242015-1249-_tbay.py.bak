@@ -1,0 +1,91 @@
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.ext.declarative import declarative_base
+from datetime import datetime
+from sqlalchemy import Column, Integer, String, DateTime, Float, Date,\
+    ForeignKey, Table
+
+
+engine = create_engine('postgresql://ubuntu:thinkful@localhost:5432/tbay')
+Session = sessionmaker(bind=engine)
+session = Session()
+Base = declarative_base()
+
+
+pizza_topping_table = Table('pizza_topping_association', Base.metadata,
+                            Column('pizza_id', Integer, ForeignKey('pizza.id')),
+                            Column('topping_id', Integer,
+                                   ForeignKey('topping.id')))
+
+
+class Item(Base):
+    __tablename__ = "items"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    description = Column(String)
+    start_time = Column(DateTime, default=datetime.utcnow)
+
+
+class User(Base):
+    __tablename__ = 'users'
+
+    id = Column(Integer, primary_key=True)
+    username = Column(String, nullable=False)
+    password = Column(String, nullable=False)
+
+
+class Bid(Base):
+    __tablename__ = 'bids'
+
+    id = Column(Integer, primary_key=True)
+    price = Column(Float, nullable=False)
+
+
+class Passport(Base):
+    __tablename__ = 'passport'
+    id = Column(Integer, primary_key=True)
+    issue_date = Column(Date, nullable=False, default=datetime.utcnow)
+
+    owner_id = Column(Integer, ForeignKey('person.id'), nullable=False)
+
+
+class Person(Base):
+    __tablename__ = 'person'
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+
+    passport = relationship("Passport", uselist=False, backref="owner")
+
+
+class Manufacturer(Base):
+    __tablename__ = 'manufacturer'
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    guitars = relationship("Guitar", backref="manufacturer")
+
+
+class Guitar(Base):
+    __tablename__ = 'guitar'
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+
+    manufacturer_id = Column(Integer, ForeignKey('manufacturer.id'),
+                             nullable=False)
+
+
+class Pizza(Base):
+    __tablename__ = 'pizza'
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    toppings = relationship("Topping", secondary="pizza_topping_association",
+                            backref="pizzas")
+
+
+class Topping(Base):
+    __tablename__ = 'topping'
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+
+
+Base.metadata.create_all(engine)
